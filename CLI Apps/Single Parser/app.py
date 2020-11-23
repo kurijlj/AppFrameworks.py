@@ -1,9 +1,8 @@
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """TODO: Put module docstring HERE.
 """
 
-#==============================================================================
+# =============================================================================
 # Copyright (C) <yyyy> <Author Name> <author@mail.com>
 #
 # This file is part of <program name>.
@@ -19,10 +18,10 @@
 # You should have received a copy of the GNU General Public License along with
 # this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-#==============================================================================
+# =============================================================================
 
 
-#==============================================================================
+# =============================================================================
 #
 # <Put documentation here>
 #
@@ -30,7 +29,7 @@
 #
 # * <programfilename>.py: created.
 #
-#==============================================================================
+# =============================================================================
 
 
 # ============================================================================
@@ -62,9 +61,9 @@ import actions as ac
 # =============================================================================
 
 
-#==============================================================================
+# =============================================================================
 # Utility classes and functions
-#==============================================================================
+# =============================================================================
 
 def _format_epilog(epilog_addition, bug_mail):
     """Formatter for generating help epilogue text. Help epilogue text is an
@@ -86,8 +85,7 @@ def _format_epilog(epilog_addition, bug_mail):
         return None
 
     if bug_mail is not None:
-        fmt_mail = 'Report bugs to <{bug_mail}>.'\
-            .format(bug_mail = bug_mail)
+        fmt_mail = 'Report bugs to <{0}>.'.format(bug_mail)
     else:
         fmt_mail = None
 
@@ -98,8 +96,7 @@ def _format_epilog(epilog_addition, bug_mail):
         fmt_eplg = epilog_addition
 
     else:
-        fmt_eplg = '{addition}\n\n{mail}'\
-            .format(addition = epilog_addition, mail = fmt_mail)
+        fmt_eplg = '{0}\n\n{1}'.format(epilog_addition, fmt_mail)
 
     return fmt_eplg
 
@@ -139,8 +136,8 @@ class AppDoc():
 
         if not isinstance(val, str):
             raise TypeError(
-                'Trying to pass non string value as argument \'{0}({1})\''\
-                    .format(type(val).__name__, val)
+                'Trying to pass non string value as argument \'{0}({1})\''
+                .format(type(val).__name__, val)
                 )
 
         self._docs[attribute] = val
@@ -275,9 +272,9 @@ class AppDoc():
         self._new_string_attribute('version', version_string)
 
 
-#==============================================================================
+# =============================================================================
 # App class
-#==============================================================================
+# =============================================================================
 
 class MainApp():
     """Application main class. It is used to set application documentation,
@@ -299,9 +296,9 @@ class MainApp():
 
         self._doc = doc
         self._parser = argparse.ArgumentParser(
-            prog = doc.appname,
-            description = doc.description,
-            epilog = doc.epilog,
+            prog=doc.appname,
+            description=doc.description,
+            epilog=doc.epilog,
             formatter_class=argparse.RawDescriptionHelpFormatter
             )
 
@@ -314,7 +311,6 @@ class MainApp():
 
         self._action = None
 
-
     @property
     def program_name(self):
         """Utility function that makes accessing program name attribute
@@ -322,14 +318,12 @@ class MainApp():
         """
         return self._parser.prog
 
-
     @property
     def program_description(self):
         """Utility function that makes accessing program description
         attribute neat and hides implementation details.
         """
         return self._parser.description
-
 
     def addArgumentGroup(self, title=None, description=None):
         """Adds an argument group to application object.
@@ -346,7 +340,6 @@ class MainApp():
 
         return group
 
-
     def _group_by_title(self, title):
         group = None
 
@@ -356,7 +349,6 @@ class MainApp():
                 break
 
         return group
-
 
     def addArgument(self, *args, **kwargs):
         """Wrapper for add_argument methods of the argparse module. If
@@ -377,9 +369,8 @@ class MainApp():
                     'Trying to reference nonexisten argument group'
                     )
 
-            kwargsr = {k:kwargs[k] for k in kwargs if k != 'group'}
-            group.add_argument( *args, **kwargsr)
-
+            kwargsr = {k: kwargs[k] for k in kwargs if k != 'group'}
+            group.add_argument(*args, **kwargsr)
 
     def passArgumentOptions(self, args=None, namespace=None):
         """Wrapper for parse_args method of a parser object. It also
@@ -407,7 +398,6 @@ class MainApp():
             self._action.addAppName(self._doc.appname)
             self._action.validateInput()
 
-
     def run(self):
         """This method executes action code.
         """
@@ -415,25 +405,42 @@ class MainApp():
         self._action.execute()
 
 
-#==============================================================================
+# =============================================================================
 # Script main body
-#==============================================================================
+# =============================================================================
 
 if __name__ == '__main__':
     documentation = AppDoc()
     program = MainApp(documentation)
 
     program.addArgumentGroup('general options')
+    program.addArgumentGroup('app specific options')
+
+    # Add optional argument for displaying program version information.
     program.addArgument(
         '-V', '--version',
         action='store_true',
         help='print program version',
+        dest='version',
         group='general options'
         )
     program.addArgument(
         '--usage',
         action='store_true',
-        help='give a short usage message'
+        help='give a short usage message',
+        dest='usage',
+        group='general options'
+        )
+    program.addArgument(
+        '-L', '--list-selection',
+        action='store',
+        type=str,
+        choices=('option_1', 'option_2', 'option_3'),
+        help='sample select from list argument option. Supported values '
+        + 'are: \'option_1\', \'option_2\', \'option_2\'',
+        metavar='SELECTION',
+        dest='mylist',
+        group='app specific options'
         )
 
     program.passArgumentOptions()
