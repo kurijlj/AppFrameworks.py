@@ -52,7 +52,8 @@
 # Modules import section
 # =============================================================================
 
-# import validators as vd
+from sys import stderr
+import validators as vd
 
 
 # =============================================================================
@@ -219,9 +220,15 @@ class MainAction(ProgramAction):
     to the stdout.
     """
 
+    required_options = (
+        'single_choice',
+        'multi_choice',
+        'number_option',
+        )
+
     def __init__(self, exitf):
         super().__init__(exitf)
-        self._validators = {}
+        self._user_options = dict()
 
     def addAppName(self, name):
         """Setter method for application name string. If non string value
@@ -232,6 +239,46 @@ class MainAction(ProgramAction):
 
         self._new_attribute('appname', str, name)
 
+    def addUserOption(self, name, option, error_code=None):
+        """Method for adding user input options passed as command line
+        arguments and accompanying validators.
+        """
+        # Typechecking ...
+        if not isinstance(name, str):
+            raise TypeError(
+                'Trying to pass non \'string\' value as argument '
+                + '\'{0}({1})\''.format(type(name).__name__, name)
+                )
+
+        if not isinstance(option, vd.ProgramOption):
+            raise TypeError(
+                'Trying to pass non \'ProgramOption\' object as argument '
+                + '\'{0}({1})\''.format(type(option).__name__, option)
+                )
+
+        if error_code is not None:
+            if not isinstance(error_code, int):
+                raise TypeError(
+                    'Trying to pass non \'int\' value as argument '
+                    + '\'{0}({1})\''.format(
+                        type(error_code).__name__,
+                        error_code
+                        )
+                    )
+
+            if error_code in self._exit_codes.values():
+                raise ValueError(
+                    'Exit code with given value \'{0}\' already exists'\
+                    .format(error_code)
+                    )
+
+            self._exit_codes[name] = error_code
+
+        else:
+            self._exit_codes[name] = None
+
+        self._user_options[name] = option
+
     def execute(self):
         """TODO: Put method docstring HERE.
         """
@@ -240,10 +287,30 @@ class MainAction(ProgramAction):
 
         self._exit_app(self._exit_codes['noerr'])
 
-    def validateInput(self):
+    def validateOptionArguments(self):
         """TODO: Put method docstring HERE.
         """
 
-        print('{0}: Validating input ...'.format(
-            self._attributes['appname']
-            ))
+        # Check if all required program options are supplied.
+        for required in MainAction.required_options:
+            if not required in self._user_options.keys():
+                raise ValueError('Missing program option \'{0}\''
+                    .format(required)
+                    )
+
+        for name, option in self._user_options.items():
+            if not option.validate():
+                print(
+                    '{0}: Invalid option argument for option \'{1}\'. {2}'\
+                    .format(
+                        self._attributes['appname'],
+                        name,
+                        option.validator.message
+                        ),
+                    file=stderr
+                    )
+
+                if self._exit_codes[name] is None:
+                    self._exit_app(self._exit_codes['unknown_error'])
+                else:
+                    self._exit_app(self._exit_codes[name])

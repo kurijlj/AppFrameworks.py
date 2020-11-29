@@ -54,6 +54,7 @@
 
 import argparse
 import actions as ac
+import validators as vd
 
 
 # =============================================================================
@@ -396,7 +397,41 @@ class MainApp():
         else:
             self._action = ac.MainAction(self._parser.exit)
             self._action.addAppName(self._doc.appname)
-            self._action.validateInput()
+
+            single = vd.ProgramOption(
+                vd.UserInput(arguments.single_choice),
+                vd.ValidateInput()
+                )
+            self._action.addUserOption(
+                'single_choice',
+                single
+                )
+
+            multi = vd.ProgramOption(
+                vd.UserInput(arguments.multi_choice),
+                vd.ValidateInput()
+                )
+            self._action.addUserOption(
+                'multi_choice',
+                multi
+                )
+
+            number = vd.ProgramOption(
+                vd.UserInput(arguments.number_option),
+                vd.ValidateNumericalInput(
+                    min_val=0.0,
+                    max_val=5.0,
+                    incl_min=False,
+                    incl_max=True,
+                    )
+                )
+            self._action.addUserOption(
+                'number_option',
+                number,
+                2
+                )
+
+            self._action.validateOptionArguments()
 
     def run(self):
         """This method executes action code.
@@ -432,14 +467,39 @@ if __name__ == '__main__':
         group='general options'
         )
     program.addArgument(
-        '-L', '--list-selection',
+        '-C', '--choose-from-list',
         action='store',
         type=str,
         choices=('option_1', 'option_2', 'option_3'),
-        help='sample select from list argument option. Supported values '
+        help='sample select from list of options. Supported values '
         + 'are: \'option_1\', \'option_2\', \'option_2\'',
         metavar='SELECTION',
-        dest='mylist',
+        dest='single_choice',
+        group='app specific options'
+        )
+    program.addArgument(
+        '-M', '--multi-choice-from-list',
+        action='store',
+        nargs='*',  # Enables selection of unlimited multiple options.
+        type=str,
+        choices=('option_1', 'option_2', 'option_3'),
+        help='sample multi-select from list of options. Supported values '
+        + 'are: \'option_1\', \'option_2\', \'option_2\'',
+        metavar='SELECTION',
+        dest='multi_choice',
+        group='app specific options'
+        )
+    program.addArgument(
+        '-N', '--number-option',
+        action='store',
+        nargs='*',  # Enables selection of unlimited multiple options.
+        # default=3.14,
+        type=float,
+        help='sample option for passing numerical values (int or float).'
+        + 'It can be any floating point value within range '
+        + '0.0 < NUMBER <= 5.0',
+        metavar='NUMBER',
+        dest='number_option',
         group='app specific options'
         )
 
