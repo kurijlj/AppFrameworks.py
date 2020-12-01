@@ -49,6 +49,8 @@
 # Modules import section
 # =============================================================================
 
+from pathlib import Path
+
 
 # =============================================================================
 # Module level constants
@@ -152,6 +154,7 @@ class ValidateArgument():
         'numerical': (int, float,),
         'integer': (int,),
         'iterable': (tuple, list,),
+        'string': (str,),
         }
 
     def __init__(self, arg_name, arg_type, def_val, accept_none):
@@ -225,6 +228,106 @@ class ValidateInput():
                 )
 
         return True
+
+
+class ValidateFileInput(ValidateInput):
+    """TODO: Put class docstring here.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__()
+
+        # Check if all required arguments are passed to the constructor and if
+        # are they of the rquired type.
+        check_none = ValidateArgument(
+            'accept_none',
+            'boolean',
+            True,
+            False
+            )
+        check_none.validate(**kwargs)
+
+        check_none = ValidateArgument(
+            'existent',
+            'boolean',
+            True,
+            False
+            )
+        check_none.validate(**kwargs)
+
+        check_type = ValidateArgument(
+            'file_type',
+            'string',
+            True,
+            True
+            )
+        check_none.validate(**kwargs)
+
+        # Initialize object attributes.
+        if 'accept_none' not in kwargs:
+            self._accept_none = False
+        else:
+            self._accept_none = kwargs['accept_none']
+
+        if 'existent' not in kwargs:
+            self._existent = True
+        else:
+            self._existent = kwargs['existent']
+
+        if 'file_type' not in kwargs:
+            self._type = None
+        else:
+            self._type = kwargs['file_type']
+
+    def validate(self, user_input):
+        """TODO: Put method docstring here.
+        """
+
+        super().validate(user_input)
+
+        if not user_input.isNone():
+            for path_str in user_input.data:
+                path = Path(path_str)
+
+                # If file doesn't exist and we do not accept non existent files
+                # as valid input return False.
+                if not path.exists():
+                    if self._existent:
+                        self._message = 'File with given path \'{0}\' '\
+                            .format(path.resolve())
+                            + 'does not exist'
+
+                        return False
+
+                    # We accept non-existent files and further testing is
+                    # not applicable.
+                    return True
+
+                # Check if we are dealing with file at all.
+                if not path.is_file():
+                    self._message = Given path \'{0}\' is not a file'\
+                    .format(path.resolve())
+
+                    return False
+
+                # If set check if file is of required file type, i.e. file has
+                # given extension.
+                if self._type is not None and path.suffix[1:] != self._type:
+                    self._message = 'File with path \'{0}\' is not of '\
+                        .format(path.resolve())
+                        + 'required file type ({0})'.format(self._type)
+
+                    return False
+
+            return True
+
+        if self._accept_none:
+            return True
+
+        # None is not acceptable so we have to format an error message.
+        self._message = '\'None\' is not an valid option value'
+
+        return False
 
 
 class ValidateNumericalInput(ValidateInput):
